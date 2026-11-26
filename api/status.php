@@ -36,8 +36,8 @@ try {
         $q->fetchAll()
     );
 } catch (Throwable $e) {
-    error_log('status.php: ' . $e->getMessage());
-    send_json(503, ['error' => 'unavailable']);
+    // This prints the EXACT error if Postgres fails
+    send_json(500, ['error' => 'DB_ERROR', 'message' => $e->getMessage()]);
 }
 
 send_json(200, [
