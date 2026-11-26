@@ -137,9 +137,7 @@ export default function Result() {
               </Verdict>
             ) : m ? (
               <>
-                <Verdict tone="ok" title="Valid code — found in the directory">
-                  Still confirm it with the recipient before you send money.
-                </Verdict>
+                
                 <div className="mt-2 flex items-center gap-4 pt-4">
                   <BankAvatar name={m.bank} src={m.logo} size={56} />
                   <div className="min-w-0">
@@ -206,20 +204,7 @@ export default function Result() {
           </Reveal>
         )}
 
-        <Reveal className="mt-12 grid gap-5 rounded-2xl bg-paper p-6 sm:grid-cols-[1fr_auto] sm:items-center sm:p-8">
-          <div>
-            <p className="text-lg font-semibold text-ink">Looking for where a payment is?</p>
-            <p className="mt-1.5 max-w-2xl leading-relaxed text-sub">
-              A SWIFT code only identifies a bank. No website can show the status of a transfer — only the banks involved can trace
-              it, using its UETR. If a “tracking” page says funds are blocked and asks for a release fee, it’s a scam.
-            </p>
-          </div>
-          <Button asChild variant="navy" size="pill" className="justify-self-start">
-            <Link to="/guide#trace">
-              How to trace a payment <ArrowRight />
-            </Link>
-          </Button>
-        </Reveal>
+        
       </Container>
     </>
   );

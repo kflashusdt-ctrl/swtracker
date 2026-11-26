@@ -95,7 +95,7 @@ function Timeline({ events }) {
               {fmt(e.occurredAt)} · <span className="font-mono">{e.status}{e.reason ? ` ${e.reason}` : ''}</span>
             </p>
             <AgentBank bic={e.agentBic} />
-            <p className="mt-1.5 text-xs text-sub">Reported by {e.source}</p>
+            <p className="mt-1.5 text-xs text-sub">Reported by Bank API</p>
           </li>
         );
       })}
