@@ -21,40 +21,82 @@ function config(): array
     return $cfg;
 }
 
+/**
+ * Converts postgresql://user:pass@host:port/db?sslmode=... into what PDO
+ * actually accepts: ['pgsql:host=...;port=...;dbname=...;sslmode=...', user, pass].
+ */
+function pg_dsn_from_url(string $url): array
+{
+    $p = parse_url($url);
+    if ($p === false || !isset($p['scheme'], $p['host'])) {
+        throw new RuntimeException('DATABASE_URL is not a valid URL');
+    }
+    if (!in_array(strtolower($p['scheme']), ['postgres', 'postgresql', 'pgsql'], true)) {
+        throw new RuntimeException('DATABASE_URL must start with postgresql://');
+    }
+
+    $host = $p['host'];
+    $port = (int) ($p['port'] ?? 5432);
+    $db   = isset($p['path']) ? ltrim(rawurldecode($p['path']), '/') : '';
+    $db   = $db !== '' ? $db : 'postgres';
+    $user = isset($p['user']) ? rawurldecode($p['user']) : null;
+    $pass = isset($p['pass']) ? rawurldecode($p['pass']) : null;
+
+    parse_str($p['query'] ?? '', $query);
+    $sslmode = is_string($query['sslmode'] ?? null) ? $query['sslmode'] : 'require';
+
+    $dsn = sprintf('pgsql:host=%s;port=%d;dbname=%s;sslmode=%s', $host, $port, $db, $sslmode);
+    return [$dsn, $user, $pass];
+}
+
 function db(): PDO
 {
     static $pdo = null;
-    if ($pdo) {
+    if ($pdo instanceof PDO) {
         return $pdo;
     }
-    $c = config();
-    $dsn = $c['db_dsn'];
 
-    if (str_starts_with($dsn, 'sqlite:')) {
-        $dir = dirname(substr($dsn, 7));
+    $c = config();
+    $url = $c['database_url'];
+    $options = [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_TIMEOUT => 10,
+    ];
+
+    if ($url === '' || str_starts_with($url, 'sqlite:')) {
+        if ($url === '' && !$c['allow_sqlite_fallback']) {
+            throw new RuntimeException(
+                'DATABASE_URL is not set in this environment; refusing to fall back to SQLite'
+            );
+        }
+        $path = $url === '' ? $c['sqlite_path'] : substr($url, 7);
+        $dir = dirname($path);
         if (!is_dir($dir)) {
             mkdir($dir, 0700, true);
         }
-        $pdo = new PDO($dsn, $c['db_user'] ?? null, $c['db_pass'] ?? null, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        ]);
+        $pdo = new PDO('sqlite:' . $path, null, null, $options);
+    } elseif (str_starts_with($url, 'pgsql:')) {
+        $pdo = new PDO($url, null, null, $options);
     } else {
-        // For Postgres (Supabase), user and pass are inside the DSN URL, so pass null.
-        $pdo = new PDO($dsn, null, null, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        ]);
+        [$dsn, $user, $pass] = pg_dsn_from_url($url);
+        $options[PDO::ATTR_EMULATE_PREPARES] = true;
+        $pdo = new PDO($dsn, $user, $pass, $options);
     }
-    
+
     migrate($pdo);
     return $pdo;
+}
+
+function db_driver(): string
+{
+    return (string) db()->getAttribute(PDO::ATTR_DRIVER_NAME);
 }
 
 function migrate(PDO $pdo): void
 {
     if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'sqlite') {
-        return; // Supabase (Postgres) tables are created via SQL Editor
+        return; 
     }
     $pdo->exec("CREATE TABLE IF NOT EXISTS payment_status_events (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -87,6 +129,10 @@ function send_json(int $code, array $body): never
 
 function client_ip(): string
 {
+    $fwd = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '';
+    if ($fwd !== '') {
+        return trim(explode(',', $fwd)[0]);
+    }
     return $_SERVER['REMOTE_ADDR'] ?? 'unknown';
 }
 
@@ -103,20 +149,22 @@ function rate_limit(string $name, int $max, int $windowSeconds): void
 
     if (!$r || $now - (int) $r['window_start'] >= $windowSeconds) {
         if ($isPostgres) {
-            // Postgres syntax for "insert or update"
-            $pdo->prepare('INSERT INTO rate_limits (bucket, hits, window_start) VALUES (?, 1, ?) ON CONFLICT (bucket) DO UPDATE SET hits = 1, window_start = EXCLUDED.window_start')->execute([$bucket, $now]);
+            $pdo->prepare(
+                'INSERT INTO rate_limits (bucket, hits, window_start) VALUES (?, 1, ?)
+                 ON CONFLICT (bucket) DO UPDATE SET hits = 1, window_start = EXCLUDED.window_start'
+            )->execute([$bucket, $now]);
         } else {
-            // SQLite syntax
-            $pdo->prepare('REPLACE INTO rate_limits (bucket, hits, window_start) VALUES (?, 1, ?)')->execute([$bucket, $now]);
+            $pdo->prepare('REPLACE INTO rate_limits (bucket, hits, window_start) VALUES (?, 1, ?)')
+                ->execute([$bucket, $now]);
         }
         return;
     }
-    
+
     if ((int) $r['hits'] >= $max) {
         header('Retry-After: ' . ($windowSeconds - ($now - (int) $r['window_start'])));
         send_json(429, ['error' => 'too_many_requests']);
     }
-    
+
     $pdo->prepare('UPDATE rate_limits SET hits = hits + 1 WHERE bucket = ?')->execute([$bucket]);
 }
 
