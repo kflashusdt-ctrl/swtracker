@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, Copy } from 'lucide-react';
 import { UetrBreakdown } from '@/components/checker/TrackCard';
@@ -7,12 +7,19 @@ import { BankAvatar, Container, Flag, Reveal, Skeleton } from '@/components/site
 import { Button } from '@/components/ui/button';
 import { parseBic, prettyName } from '@/lib/bic';
 import { lookupBic } from '@/lib/data';
-// Add these imports at the top of src/components/checker/TrackResult.jsx
-import ProgressBar from './ProgressBar';
+import ProgressBar, { computeProgress } from './ProgressBar';
 import TransferParties from './TransferParties';
 import { useAsync, useTitle } from '@/lib/hooks';
 import { describeStatus, fetchStatus, parseUetr, traceRequestText } from '@/lib/uetr';
 import { cn } from '@/lib/utils';
+
+// 1. Claude's helper function to sync the steps with the percent
+function stepFromPercent(percent) {
+  const p = Number.isFinite(percent) ? percent : 0;
+  if (p >= 80) return 3;
+  if (p >= 50) return 2;
+  return 1;
+}
 
 function CopyText({ text, label, variant = 'navy' }) {
   const [done, setDone] = useState(false);
@@ -95,7 +102,7 @@ function Timeline({ events }) {
               {fmt(e.occurredAt)} · <span className="font-mono">{e.status}{e.reason ? ` ${e.reason}` : ''}</span>
             </p>
             <AgentBank bic={e.agentBic} />
-            <p className="mt-1.5 text-xs text-sub">Reported by Bank API</p>
+            <p className="mt-1.5 text-xs text-sub">Reported by {e.source}</p>
           </li>
         );
       })}
@@ -110,7 +117,12 @@ function EmptyState({ uetr, partners, checkedAt }) {
         0
       </div>
       <h2 className="heading mt-5 text-2xl text-ink">No status reported for this payment</h2>
-      
+      <p className="mx-auto mt-2 max-w-lg leading-relaxed text-sub">
+        {partners === 0
+          ? 'BIC Finder isn’t connected to any bank yet, so there are no payment statuses to show.'
+          : 'None of our partner banks has reported this UETR. Its bank may not be connected to BIC Finder yet.'}{' '}
+        Only the banks handling the payment can see where it is.
+      </p>
       <p className="mt-3 text-xs text-sub">Checked {fmt(checkedAt)}</p>
     </div>
   );
@@ -122,8 +134,21 @@ export default function TrackResult() {
   const { uetr } = parsed;
   useTitle('Payment status');
   const res = useAsync(() => (parsed.valid ? fetchStatus(uetr) : Promise.resolve(null)), [uetr, parsed.valid]);
+  
   const events = res.data?.events ?? [];
   const latest = events.length ? describeStatus(events.at(-1).status, events.at(-1).reason) : null;
+
+  // 2. Add a timer so the page re-renders every 30 seconds
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // 3. Calculate percent and steps
+  const { percent } = computeProgress(events);
+  const rejected = events.some((e) => e.status === 'RJCT');
+  const currentStep = rejected ? 3 : stepFromPercent(percent);
 
   return (
     <>
@@ -173,7 +198,10 @@ export default function TrackResult() {
               <>
                 <TransferParties />
                 <ProgressBar events={events} />
-                <Steps current={Math.max(1, ...events.map((e) => describeStatus(e.status, e.reason).step))} rejected={events.some((e) => e.status === 'RJCT')} />
+                
+                {/* 4. Claude's fix: Use currentStep here */}
+                <Steps current={currentStep} rejected={rejected} />
+                
                 <h2 className="heading mt-8 text-xl text-ink">Updates from banks</h2>
                 <Timeline events={events} />
                 <p className="mt-8 text-xs text-sub">
