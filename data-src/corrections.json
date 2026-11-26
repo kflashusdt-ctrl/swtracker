@@ -1,0 +1,38 @@
+{
+  "_about": "Fixes applied on top of the 2019 dataset by scripts/build-data.mjs. Each entry lists its sources. 'rename' changes a bank name for an existing code; 'add' inserts a code the dataset lacks.",
+  "rename": {
+    "FMBZBWGA": {
+      "bank": "ACCESS BANK BOTSWANA LIMITED (FORMERLY BANCABC / AFRICAN BANKING CORPORATION OF BOTSWANA)",
+      "sources": [
+        "https://www.financialafrik.com/en/2021/11/30/bancabc-officially-becomes-access-bank-botswana/",
+        "https://wise.com/gb/swift-codes/FMBZBWGAXXX"
+      ],
+      "checked": "2026-11-26"
+    },
+    "BARCBWGX": {
+      "bank": "ABSA BANK BOTSWANA LIMITED (FORMERLY BARCLAYS BANK OF BOTSWANA)",
+      "sources": ["https://en.wikipedia.org/wiki/Absa_Bank_Botswana", "https://wise.com/gb/swift-codes/BARCBWGXXXX"],
+      "checked": "2026-11-26"
+    },
+    "CAPLBWGA": {
+      "bank": "FIRST CAPITAL BANK LIMITED (OLD CODE — REPLACED BY FRCGBWGA IN AUGUST 2019)",
+      "sources": ["https://www.remitly.com/us/en/swift-codes/botswana/frcgbwgaxxx/first-capital-bank-limited"],
+      "checked": "2026-11-26"
+    }
+  },
+  "add": {
+    "BW": [
+      {
+        "bic": "FRCGBWGA",
+        "bank": "FIRST CAPITAL BANK LIMITED",
+        "city": "GABORONE",
+        "branch": "",
+        "sources": [
+          "https://www.remitly.com/us/en/swift-codes/botswana/frcgbwgaxxx/first-capital-bank-limited",
+          "https://www.theswiftcodes.com/botswana/frcgbwga/"
+        ],
+        "checked": "2026-11-26"
+      }
+    ]
+  }
+}

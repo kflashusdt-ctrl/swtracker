@@ -1,0 +1,10 @@
+# Apache / cPanel hosting: upload dist/ contents plus the api/ folder to the web root.
+Options -Indexes
+RewriteEngine On
+RewriteBase /
+# Real files and folders (assets, data, flags, logos, api/*.php) are served as-is.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+# Everything else is a page of the React app.
+RewriteRule ^ index.html [L]

@@ -1,0 +1,5 @@
+# Only the two public endpoints are reachable over HTTP.
+<FilesMatch "^(lib|config|config\.local)\.php$">
+  Require all denied
+</FilesMatch>
+Options -Indexes
