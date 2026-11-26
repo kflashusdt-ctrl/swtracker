@@ -3,8 +3,8 @@ import { cn } from '@/lib/utils';
 
 // 12 hours from the moment the payment reached the FINAL bank = 100%
 // Starts at 45% so the bar has visible space to move.
-const START_PCT = 48;
-const TOTAL_MS = 12 * 60 * 60 * 1000;
+const START_PCT = 10;
+const TOTAL_MS = 14 * 60 * 60 * 1000; // 14 hours
 
 export function computeProgress(events, nowMs = Date.now()) {
   if (!events?.length) return { percent: 0, phase: 'Waiting', tone: 'info' };
