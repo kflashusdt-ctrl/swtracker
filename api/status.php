@@ -1,4 +1,8 @@
 <?php
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Accept");
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { exit(0); }
 // GET /api/status.php?uetr=<uetr>
 // Returns status events reported by connected banks, oldest first. No bank is connected yet,
 // so `events` is always empty and the site shows the "no status" page.

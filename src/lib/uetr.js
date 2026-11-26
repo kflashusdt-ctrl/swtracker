@@ -54,7 +54,11 @@ export function describeStatus(status, reason) {
 }
 
 export async function fetchStatus(uetr) {
-  const res = await fetch(`/api/status.php?uetr=${encodeURIComponent(uetr)}`, { headers: { Accept: 'application/json' } });
+  // Use Vercel's env variable, or local fallback
+  const API_BASE = import.meta.env.VITE_API_URL || '';
+  const res = await fetch(`${API_BASE}/api/status.php?uetr=${encodeURIComponent(uetr)}`, { 
+    headers: { Accept: 'application/json' } 
+  });
   const type = res.headers.get('content-type') || '';
   if (!type.includes('application/json')) throw new Error('unavailable');
   const body = await res.json();
