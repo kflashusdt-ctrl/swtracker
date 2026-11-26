@@ -29,11 +29,13 @@ export function computeProgress(events, nowMs = Date.now()) {
   const ratio = Math.min(1, elapsed / TOTAL_MS);
   const percent = Math.min(100, Math.round(START_PCT + ratio * (100 - START_PCT)));
 
-  // Phase
-  let phase = 'With the banks';
-  let tone = 'info';
-  if (percent >= 80) { phase = 'Finalizing'; tone = 'warn'; }
-  if (percent >= 100) { phase = 'Completed'; tone = 'ok'; }
+    // Phase
+    let phase = 'Sent';
+    let tone = 'info';
+    
+    if (percent >= 50) { phase = 'With the banks'; tone = 'info'; }
+    if (percent >= 80) { phase = 'Finalizing'; tone = 'warn'; }
+    if (percent >= 100) { phase = 'Completed'; tone = 'ok'; }
 
   return { percent, phase, tone };
 }
