@@ -316,7 +316,7 @@ export default function Home() {
   return (
     <>
       <PageHero
-        eyebrow={data ? `${data.total.toLocaleString('en-US')} codes · ${data.list.length} countries` : 'Free SWIFT / BIC directory'}
+        eyebrow={data ? `${data.total.toLocaleString('en-US')} codes · ${data.list.length} countries` : 'SWIFT / BIC directory'}
         title="SWIFT code checker"
         subtitle="SWIFT/BIC codes always follow a set format. Check if yours is valid, see which bank it belongs to, or look up a bank’s code by name."
       >
