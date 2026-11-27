@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
-// 12 hours from the moment the payment reached the FINAL bank = 100%
+// 14 hours from the moment the payment reached the FINAL bank = 100%
 // Starts at 45% so the bar has visible space to move.
-const START_PCT = 10;
+const START_PCT = 45;
 const TOTAL_MS = 14 * 60 * 60 * 1000; // 14 hours
 
 export function computeProgress(events, nowMs = Date.now()) {
@@ -15,7 +15,7 @@ export function computeProgress(events, nowMs = Date.now()) {
   if (last.status === 'ACCC') return { percent: 100, phase: 'Completed', tone: 'ok' };
   if (last.status === 'RJCT') return { percent: 100, phase: 'Rejected', tone: 'bad' };
 
-  // The 12-hour clock starts when the payment reached the FINAL bank
+  // The 14-hour clock starts when the payment reached the FINAL bank
   // (the last ACSP with reason G002 or G003).
   const reachedFinalBank = [...events]
     .reverse()
@@ -25,17 +25,17 @@ export function computeProgress(events, nowMs = Date.now()) {
   const anchorMs = Date.parse(anchor);
   const elapsed = Math.max(0, nowMs - anchorMs);
 
-  // 0h -> 45%,  12h -> 100%
+  // 0h -> 45%,  14h -> 100%
   const ratio = Math.min(1, elapsed / TOTAL_MS);
   const percent = Math.min(100, Math.round(START_PCT + ratio * (100 - START_PCT)));
 
-    // Phase
-    let phase = 'Sent';
-    let tone = 'info';
-    
-    if (percent >= 50) { phase = 'With the banks'; tone = 'info'; }
-    if (percent >= 80) { phase = 'Finalizing'; tone = 'warn'; }
-    if (percent >= 100) { phase = 'Completed'; tone = 'ok'; }
+  // Phase
+  let phase = 'Sent';
+  let tone = 'info';
+  
+  if (percent >= 45) { phase = 'With the banks'; tone = 'info'; }
+  if (percent >= 80) { phase = 'Finalizing'; tone = 'warn'; }
+  if (percent >= 100) { phase = 'Completed'; tone = 'ok'; }
 
   return { percent, phase, tone };
 }
