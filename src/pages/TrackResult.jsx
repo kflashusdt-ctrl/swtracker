@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 function stepFromPercent(percent) {
   const p = Number.isFinite(percent) ? percent : 0;
   if (p >= 80) return 3;
-  if (p >= 50) return 2; // <-- Changed back to 50
+  if (p >= 50) return 2;
   return 1;
 }
 
@@ -74,29 +74,32 @@ function AgentBank({ bic }) {
   const { data } = useAsync(() => (parsed.valid ? lookupBic(parsed.bic) : Promise.resolve(null)), [parsed.bic]);
   if (!bic) return null;
   const m = data?.match ?? data?.head;
+  
   return (
-    <span className="mt-2 inline-flex items-center gap-2.5 rounded-xl border border-line bg-white py-1.5 pl-1.5 pr-3">
+    <div className="mt-2 flex w-full max-w-full items-center gap-2.5 rounded-xl border border-line bg-white py-1.5 pl-1.5 pr-3">
       <BankAvatar name={m?.bank ?? bic} src={m?.logo} size={30} />
-      <span className="min-w-0">
-        <span className="block truncate text-sm font-semibold text-ink">{m ? prettyName(m.bank) : bic}</span>
-        <span className="flex items-center gap-1.5 font-mono text-xs text-sub">
-          {data?.country && <Flag code={data.country.code} className="h-[10px] w-[14px] rounded-[2px]" />}
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-ink break-words leading-tight">
+          {m ? prettyName(m.bank) : bic}
+        </p>
+        <div className="flex items-center gap-1.5 font-mono text-xs text-sub mt-1">
+          {data?.country && <Flag code={data.country.code} className="h-[10px] w-[14px] rounded-[2px] shrink-0" />}
           {bic}
-        </span>
-      </span>
-    </span>
+        </div>
+      </div>
+    </div>
   );
 }
 
 function Timeline({ events }) {
   return (
-    <ol className="relative mt-2 space-y-6 border-l-2 border-line pl-6">
+    <ol className="relative mt-2 space-y-6 border-l-2 border-line pl-4 sm:pl-6">
       {[...events].reverse().map((e, i) => {
         const d = describeStatus(e.status, e.reason);
         const dot = { ok: 'bg-ok', bad: 'bg-bad', warn: 'bg-warn', info: 'bg-seg-bank' }[d.tone];
         return (
-          <li key={i} className="relative">
-            <span className={cn('absolute -left-[31px] top-1 size-3.5 rounded-full ring-4 ring-white', dot)} />
+          <li key={i} className="relative overflow-hidden">
+            <span className={cn('absolute -left-[23px] sm:-left-[31px] top-1 size-3.5 rounded-full ring-4 ring-white', dot)} />
             <p className="font-semibold text-ink">{d.title}</p>
             <p className="text-sm text-sub">
               {fmt(e.occurredAt)} · <span className="font-mono">{e.status}{e.reason ? ` ${e.reason}` : ''}</span>
@@ -173,7 +176,7 @@ export default function TrackResult() {
         </Container>
       </section>
 
-      <Container className="relative z-10 -mt-24 pb-20">
+      <Container className="relative z-10 -mt-24 pb-20 overflow-hidden">
         <Reveal className="rounded-[28px] bg-white p-5 shadow-[0_1px_2px_rgba(11,31,58,0.06),0_30px_70px_-30px_rgba(11,31,58,0.45)] ring-1 ring-black/[0.04] sm:p-9">
           <UetrBreakdown uetr={uetr} />
           <div className="mt-8">
