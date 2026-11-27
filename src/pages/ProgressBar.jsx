@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 const START_PCT = 45;
 const TOTAL_MS = 14 * 60 * 60 * 1000; // 14 hours
 
-export function computeProgress(events, nowMs = Date.now()) {
+export function computeProgress(events, nowMs = new Date('2026-11-27T21:10:00Z').getTime()) {
   if (!events?.length) return { percent: 0, phase: 'Waiting', tone: 'info' };
 
   const last = events[events.length - 1];
