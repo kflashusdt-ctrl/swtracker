@@ -33,7 +33,7 @@ export function computeProgress(events, nowMs = Date.now()) {
   let phase = 'Sent';
   let tone = 'info';
   
-  if (percent >= 45) { phase = 'With the banks'; tone = 'info'; }
+  if (percent >= 50) { phase = 'With the banks'; tone = 'info'; }
   if (percent >= 80) { phase = 'Finalizing'; tone = 'warn'; }
   if (percent >= 100) { phase = 'Completed'; tone = 'ok'; }
 

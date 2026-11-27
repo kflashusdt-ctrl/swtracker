@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 function stepFromPercent(percent) {
   const p = Number.isFinite(percent) ? percent : 0;
   if (p >= 80) return 3;
-  if (p >= 45) return 2; // <-- Changed from 50 to 45
+  if (p >= 50) return 2; // <-- Changed back to 50
   return 1;
 }
 
